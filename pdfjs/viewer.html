@@ -1,63 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="utf-8" />
   <title>PDF Viewer</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body { 
-      margin: 0; 
-      background: #111; 
-      color: white; 
-      font-family: Arial; 
-      /* Prevent selection and dragging */
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-      -webkit-user-drag: none;
-      /* Prevent tap highlight on mobile */
-      -webkit-tap-highlight-color: transparent;
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial;
+      overflow-x: hidden;
     }
-    
+
     #controls {
       display: flex;
       justify-content: center;
-      gap: 20px;
-      padding: 15px;
+      align-items: center;
+      gap: 15px;
+      padding: 12px;
       background: #222;
       position: sticky;
       top: 0;
       z-index: 10;
+      width: 100%;
     }
-    
+
     button {
       background: #444;
       color: white;
       border: none;
-      padding: 10px 20px;
-      font-size: 16px;
+      padding: 8px 16px;
+      font-size: 15px;
+      border-radius: 6px;
       cursor: pointer;
-      border-radius: 8px;
     }
-    
+
     button:hover {
       background: #666;
     }
-    
+
     #page-num {
-      font-size: 16px;
-      padding-top: 5px;
+      font-size: 15px;
     }
-    
+
     canvas {
       display: block;
-      margin: 20px auto;
+      margin: 0 auto;
+      width: 100% !important;     /* 🔥 Forces mobile fitting */
+      height: auto !important;    /* 🔥 Keeps aspect ratio */
       background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-      /* Prevent image dragging */
-      -webkit-user-drag: none;
-      user-drag: none;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
     }
   </style>
 
@@ -67,7 +62,7 @@
 <body>
 
   <div id="controls">
-    <button id="prev">Previous</button>
+    <button id="prev">Prev</button>
     <div id="page-num">Page 1 / 1</div>
     <button id="next">Next</button>
   </div>
@@ -75,133 +70,9 @@
   <canvas id="pdf-canvas"></canvas>
 
   <script>
-    // Clean screenshot protection without floating elements
-    (function() {
-      'use strict';
-      
-      let protectionActive = true;
-      
-      // Detect screenshot attempts on desktop (Print Screen key)
-      document.addEventListener('keydown', function(e) {
-        if (!protectionActive) return;
-        
-        if (e.key === 'PrintScreen' || (e.ctrlKey && e.key === 'p')) {
-          e.preventDefault();
-          e.stopPropagation();
-          // Briefly disrupt the display
-          temporarilyDisrupt();
-          return false;
-        }
-      });
-      
-      // Prevent right-click context menu
-      document.addEventListener('contextmenu', function(e) {
-        if (!protectionActive) return;
-        e.preventDefault();
-        return false;
-      });
-      
-      // Prevent drag and drop
-      document.addEventListener('dragstart', function(e) {
-        if (!protectionActive) return;
-        e.preventDefault();
-        return false;
-      });
-      
-      // Mobile-specific protection
-      function setupMobileProtection() {
-        // Detect if mobile
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-          // Prevent pinch zoom
-          document.addEventListener('touchmove', function(e) {
-            if (e.scale !== 1) {
-              e.preventDefault();
-            }
-          }, { passive: false });
-          
-          // Detect app switching (common before taking screenshots)
-          document.addEventListener('visibilitychange', function() {
-            if (document.hidden && protectionActive) {
-              // User switched apps - might be taking screenshot
-              setTimeout(() => {
-                temporarilyDisrupt();
-              }, 100);
-            }
-          });
-        }
-      }
-      
-      // CSS-based subtle protection
-      function setupCSSProtection() {
-        const style = document.createElement('style');
-        style.textContent = `
-          /* Very subtle pattern that interferes with screenshots but is barely visible */
-          body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-              linear-gradient(45deg, transparent 49.9%, rgba(255,255,255,0.01) 50%, transparent 50.1%),
-              linear-gradient(-45deg, transparent 49.9%, rgba(255,255,255,0.01) 50%, transparent 50.1%);
-            background-size: 20px 20px;
-            pointer-events: none;
-            z-index: 9998;
-            opacity: 0.3;
-          }
-          
-          /* Hide content from automated screenshot tools */
-          @media print {
-            body { display: none !important; }
-          }
-        `;
-        document.head.appendChild(style);
-      }
-      
-      // Temporarily disrupt display for screenshot protection
-      function temporarilyDisrupt() {
-        if (!protectionActive) return;
-        
-        const originalFilter = document.body.style.filter;
-        document.body.style.filter = 'brightness(1.1) contrast(1.1)';
-        
-        setTimeout(() => {
-          document.body.style.filter = originalFilter;
-        }, 200);
-      }
-      
-      // Additional keyboard shortcuts blocking
-      document.addEventListener('keydown', function(e) {
-        if (!protectionActive) return;
-        
-        const blockedKeys = [
-          'F12', 'PrintScreen', 
-          ...(e.ctrlKey ? ['s', 'p', 'u'] : []),
-          ...(e.metaKey ? ['s', 'p'] : [])
-        ];
-        
-        if (blockedKeys.includes(e.key.toLowerCase()) || 
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'C'))) {
-          e.preventDefault();
-          e.stopPropagation();
-          temporarilyDisrupt();
-          return false;
-        }
-      });
-      
-      // Initialize protections
-      setupMobileProtection();
-      setupCSSProtection();
-      
-    })();
-
     const pdfData = "{{BASE64PDF}}";
-
     const pdfjsLib = window["pdfjs-dist/build/pdf"];
+
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.6.172/pdf.worker.min.js";
 
@@ -211,39 +82,44 @@
     const canvas = document.getElementById("pdf-canvas");
     const ctx = canvas.getContext("2d");
 
-    // Make canvas non-downloadable
-    canvas.addEventListener('contextmenu', function(e) {
-      e.preventDefault();
-      return false;
-    });
+    // Mobile width responsive scale
+    function calculateScale(page) {
+      const viewport = page.getViewport({ scale: 1 });
+      const screenWidth = window.innerWidth - 20;
+
+      return screenWidth / viewport.width;
+    }
 
     // Load PDF
-    pdfjsLib.getDocument({ data: atob(pdfData) }).promise.then(function (pdf) {
+    pdfjsLib.getDocument({ data: atob(pdfData) }).promise.then(function(pdf) {
       pdfDoc = pdf;
-      document.getElementById("page-num").innerText = `Page 1 / ${pdf.numPages}`;
-      renderPage(currentPage);
+      document.getElementById("page-num").innerText =
+        `Page 1 / ${pdf.numPages}`;
+      renderPage(1);
     });
 
-    // Render a page
+    // Render page responsive
     function renderPage(num) {
-      pdfDoc.getPage(num).then(function (page) {
-        const scale = 1.5;
+      pdfDoc.getPage(num).then(function(page) {
+
+        const scale = calculateScale(page);   // 🔥 Auto scale
         const viewport = page.getViewport({ scale });
 
-        canvas.height = viewport.height;
         canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
         page.render({
           canvasContext: ctx,
           viewport: viewport,
         });
+
       });
 
       document.getElementById("page-num").innerText =
         `Page ${num} / ${pdfDoc.numPages}`;
     }
 
-    // Button listeners
+    // Navigation buttons
     document.getElementById("prev").onclick = function () {
       if (currentPage <= 1) return;
       currentPage--;
